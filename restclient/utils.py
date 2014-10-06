@@ -43,14 +43,14 @@ iri2uri
 Converts an IRI to a URI.
 """
 import re
-import urlparse
+import urllib.parse
 
 
 def to_bytestring(s):
-    if not isinstance(s, basestring):
+    if not isinstance(s, str):
         raise TypeError("value should be a str or unicode")
 
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return s.encode('utf-8')
     return s
     
@@ -61,7 +61,7 @@ def parse_url(url):
     a path relative to root (if any), and a boolean representing 
     whether the connection should use SSL or not.
     """
-    (scheme, netloc, path, params, query, frag) = urlparse.urlparse(url)
+    (scheme, netloc, path, params, query, frag) = urllib.parse.urlparse(url)
 
     # We only support web services
     if not scheme in ('http', 'https'):
@@ -134,12 +134,12 @@ def iri2uri(uri):
     """Convert an IRI to a URI. Note that IRIs must be 
     passed in a unicode strings. That is, do not utf-8 encode
     the IRI before passing it into the function.""" 
-    if isinstance(uri ,unicode):
-        (scheme, authority, path, query, fragment) = urlparse.urlsplit(uri)
+    if isinstance(uri ,str):
+        (scheme, authority, path, query, fragment) = urllib.parse.urlsplit(uri)
         authority = authority.encode('idna')
         # For each character in 'ucschar' or 'iprivate'
         #  1. encode as utf-8
         #  2. then %-encode each octet of that utf-8 
-        uri = urlparse.urlunsplit((scheme, authority, path, query, fragment))
+        uri = urllib.parse.urlunsplit((scheme, authority, path, query, fragment))
         uri = "".join([encode(c) for c in uri])
     return uri

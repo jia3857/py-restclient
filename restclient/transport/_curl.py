@@ -20,7 +20,8 @@ curl transport
 """
 
 import re
-import StringIO
+import io
+import six
 import sys
 
 
@@ -36,7 +37,7 @@ except ImportError:
     
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):
-    return dict([ (key.lower(), NORMALIZE_SPACE.sub(value, ' ').strip())  for (key, value) in headers.iteritems()])
+    return dict([ (key.lower(), NORMALIZE_SPACE.sub(value, ' ').strip())  for (key, value) in headers.items()])
 
 
 def _get_pycurl_errcode(symbol, default):
@@ -122,10 +123,11 @@ class CurlTransport(HTTPTransportBase):
             raise TransportError("No blank line at end")
 
         headers = {}
+        separator = six.binary_type(':', 'utf-8')
         for line in lines:
-            if ":" in line:
+            if separator in line:
                 try:
-                    name, value = line.split(':', 1)
+                    name, value = line.split(separator, 1)
                 except ValueError:
                     raise TransportError(
                         "Malformed HTTP header line in response: %r" % (line,))
@@ -164,8 +166,8 @@ class CurlTransport(HTTPTransportBase):
             else: # no timeout by default
                 c.setopt(pycurl.TIMEOUT, 0)
 
-            data = StringIO.StringIO()
-            header = StringIO.StringIO()
+            data = io.BytesIO()
+            header = io.BytesIO()
             c.setopt(pycurl.WRITEFUNCTION, data.write)
             c.setopt(pycurl.HEADERFUNCTION, header.write)
             c.setopt(pycurl.URL, url)
@@ -226,7 +228,7 @@ class CurlTransport(HTTPTransportBase):
                     content = body
                 else:
                     body = to_bytestring(body)
-                    content = StringIO.StringIO(body)
+                    content = io.BytesIO(body)
                     if 'Content-Length' in headers:
                         del headers['Content-Length']
                     content_length = len(body)
@@ -240,14 +242,14 @@ class CurlTransport(HTTPTransportBase):
             if headers:
                 _normalize_headers(headers)
                 c.setopt(pycurl.HTTPHEADER,
-                        ["%s: %s" % pair for pair in sorted(headers.iteritems())])
+                        ["%s: %s" % pair for pair in sorted(headers.items())])
 
             try:
                 c.perform()
-            except pycurl.error, e:
-                if e[0] != CURLE_SEND_ERROR:
+            except pycurl.error as e:
+                if e.args[0] != CURLE_SEND_ERROR:
                     if restclient.debuglevel > 0:
-                        print >>sys.stderr, str(e)
+                        print(str(e), file=sys.stderr)
                     raise TransportError(e)
 
             response_headers = self._parseHeaders(header)

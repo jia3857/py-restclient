@@ -64,7 +64,7 @@ class HTTPLib2Transport(HTTPTransportBase):
             try:
                 import socks
             except:
-                print >>sys.stderr, "socks module isn't installed, you can't use proxy"
+                print("socks module isn't installed, you can't use proxy", file=sys.stderr)
                 socks = None
 
             if socks is not None:
@@ -108,7 +108,7 @@ class HTTPLib2Transport(HTTPTransportBase):
         if not (url.startswith('http://') or url.startswith('https://')):
             error = 'URL is not a HTTP URL: %r' % (url,)
             if restclient.debuglevel > 0:
-                print >>sys.stderr, str(error)
+                print(str(error), file=sys.stderr)
             raise InvalidUrl(error)
 
         headers.setdefault('User-Agent', USER_AGENT)
