@@ -46,7 +46,7 @@ class HTTPResponse(dict):
     reason = "Ok"
 
     def __init__(self, info):
-        for key, value in list(info.items()): 
+        for key, value in info.iteritems(): 
             self[key] = value 
         self.status = int(self.get('status', self.status))
         self.final_url = self.get('final_url', self.final_url)
@@ -55,7 +55,7 @@ class HTTPResponse(dict):
         if name == 'dict':
             return self 
         else:  
-            raise AttributeError(name)
+            raise AttributeError, name
 
     def __repr__(self):
         return "<%s status %s for %s>" % (self.__class__.__name__,

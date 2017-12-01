@@ -17,12 +17,12 @@
 import os
 import sys
 from optparse import OptionParser, OptionGroup
-import urllib.parse
-import urllib.request, urllib.parse, urllib.error
+import urlparse
+import urllib
 
 # python 2.6 and above compatibility
 try:
-    from urllib.parse import parse_qs as _parse_qs
+    from urlparse import parse_qs as _parse_qs
 except ImportError:
     from cgi import parse_qs as _parse_qs
 
@@ -31,7 +31,7 @@ from restclient.transport import useCurl, CurlTransport, HTTPLib2Transport
 
 class Url(object):
     def __init__(self, string):
-        parts = urllib.parse.urlsplit(urllib.parse.unquote(string))
+        parts = urlparse.urlsplit(urllib.unquote(string))
         if parts[0] != 'http' and parts[0] != 'https':
             raise ValueError('Invalid url: %s.' % string)
 
@@ -74,8 +74,8 @@ def make_query(string, method='GET', fname=None,
         list_headers=None, output=None, proxy=None):
     try:
         uri = Url(string)
-    except ValueError as e:
-        print(e, file=sys.stderr)
+    except ValueError, e:
+        print >>sys.stderr, e
         return 
 
     transport = None 
@@ -84,7 +84,7 @@ def make_query(string, method='GET', fname=None,
         try:
             proxy_url = Url(proxy)
         except:
-            print("proxy url is invalid", file=sys.stderr)
+            print >>sys.stderr, "proxy url is invalid"
             return
         proxy_infos = { "proxy_host": proxy_url.hostname }
         if proxy_url.port is not None:
@@ -132,7 +132,7 @@ def make_query(string, method='GET', fname=None,
             f.write(data)
             f.close()
         except:
-            print("Can't save result in %s" % output, file=sys.stderr)
+            print >>sys.stderr, "Can't save result in %s" % output
             return
 
 

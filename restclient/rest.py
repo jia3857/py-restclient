@@ -57,9 +57,9 @@ This module provide a common interface for all HTTP equest.
 import cgi
 import mimetypes
 import os
-import io
+import StringIO
 import types
-import urllib.request, urllib.parse, urllib.error
+import urllib
 
 try:
     import chardet
@@ -337,13 +337,13 @@ class RestClient(object):
                 except IOError:
                     pass
                 size = int(os.fstat(body.fileno())[6])
-            elif isinstance(body, str):
+            elif isinstance(body, types.StringTypes):
                 size = len(body)
                 body = to_bytestring(body)
             elif isinstance(body, dict):
                 _headers.setdefault('Content-Type', "application/x-www-form-urlencoded; charset=utf-8")
                 body = form_encode(body)
-                print(body)
+                print body
                 size = len(body)
             else:
                 raise RequestError('Unable to calculate '
@@ -360,7 +360,7 @@ class RestClient(object):
         try:
             resp, data = self.transport.request(self.make_uri(uri, path, **params), 
                 method=method, body=body, headers=_headers)
-        except TransportError as e:
+        except TransportError, e:
             raise RequestError(str(e))
 
         self.status  = status_code = resp.status
@@ -444,7 +444,7 @@ class RestClient(object):
         _path = []
         trailing_slash = False       
         for s in path:
-            if s is not None and isinstance(s, str):
+            if s is not None and isinstance(s, basestring):
                 if len(s) > 1 and s.endswith('/'):
                     trailing_slash = True
                 else:
@@ -463,7 +463,7 @@ class RestClient(object):
             retval.append(path_str)
 
         params = []
-        for k, v in list(query.items()):
+        for k, v in query.items():
             if type(v) in (list, tuple):
                 params.extend([(k, i) for i in v if i is not None])
             elif v is not None:
@@ -478,16 +478,16 @@ class RestClient(object):
 
 def url_quote(s, charset='utf-8', safe='/:'):
     """URL encode a single string with a given encoding."""
-    if isinstance(s, str):
+    if isinstance(s, unicode):
         s = s.encode(charset)
     elif not isinstance(s, str):
         s = str(s)
-    return urllib.parse.quote(s, safe=safe)
+    return urllib.quote(s, safe=safe)
 
 def url_encode(obj, charset="utf8", encode_keys=False):
     if isinstance(obj, dict):
         items = []
-        for k, v in list(obj.items()):
+        for k, v in obj.iteritems():
             if not isinstance(v, (tuple, list)):
                 v = [v]
             items.append((k, v))
@@ -496,7 +496,7 @@ def url_encode(obj, charset="utf8", encode_keys=False):
 
     tmp = []
     for key, values in items:
-        if encode_keys and isinstance(key, str):
+        if encode_keys and isinstance(key, unicode):
             key = key.encode(charset)
         else:
             key = str(key)
@@ -504,18 +504,18 @@ def url_encode(obj, charset="utf8", encode_keys=False):
         for value in values:
             if value is None:
                 continue
-            elif isinstance(value, str):
+            elif isinstance(value, unicode):
                 value = value.encode(charset)
             else:
                 value = str(value)
-        tmp.append('%s=%s' % (urllib.parse.quote(key),
-            urllib.parse.quote_plus(value)))
+        tmp.append('%s=%s' % (urllib.quote(key),
+            urllib.quote_plus(value)))
 
     return '&'.join(tmp)
     
 def form_encode(obj, charser="utf8"):
     tmp = []
-    for key, value in list(obj.items()):
+    for key, value in obj.items():
         tmp.append("%s=%s" % (url_quote(key), 
                 url_quote(value)))
     return to_bytestring("&".join(tmp))
@@ -596,39 +596,39 @@ def _getCharacterEncoding(http_headers, xml_data):
         elif xml_data[:4] == '\x00\x3c\x00\x3f':
             # UTF-16BE
             sniffed_xml_encoding = 'utf-16be'
-            xml_data = str(xml_data, 'utf-16be').encode('utf-8')
+            xml_data = unicode(xml_data, 'utf-16be').encode('utf-8')
         elif (len(xml_data) >= 4) and (xml_data[:2] == '\xfe\xff') and (xml_data[2:4] != '\x00\x00'):
             # UTF-16BE with BOM
             sniffed_xml_encoding = 'utf-16be'
-            xml_data = str(xml_data[2:], 'utf-16be').encode('utf-8')
+            xml_data = unicode(xml_data[2:], 'utf-16be').encode('utf-8')
         elif xml_data[:4] == '\x3c\x00\x3f\x00':
             # UTF-16LE
             sniffed_xml_encoding = 'utf-16le'
-            xml_data = str(xml_data, 'utf-16le').encode('utf-8')
+            xml_data = unicode(xml_data, 'utf-16le').encode('utf-8')
         elif (len(xml_data) >= 4) and (xml_data[:2] == '\xff\xfe') and (xml_data[2:4] != '\x00\x00'):
             # UTF-16LE with BOM
             sniffed_xml_encoding = 'utf-16le'
-            xml_data = str(xml_data[2:], 'utf-16le').encode('utf-8')
+            xml_data = unicode(xml_data[2:], 'utf-16le').encode('utf-8')
         elif xml_data[:4] == '\x00\x00\x00\x3c':
             # UTF-32BE
             sniffed_xml_encoding = 'utf-32be'
-            xml_data = str(xml_data, 'utf-32be').encode('utf-8')
+            xml_data = unicode(xml_data, 'utf-32be').encode('utf-8')
         elif xml_data[:4] == '\x3c\x00\x00\x00':
             # UTF-32LE
             sniffed_xml_encoding = 'utf-32le'
-            xml_data = str(xml_data, 'utf-32le').encode('utf-8')
+            xml_data = unicode(xml_data, 'utf-32le').encode('utf-8')
         elif xml_data[:4] == '\x00\x00\xfe\xff':
             # UTF-32BE with BOM
             sniffed_xml_encoding = 'utf-32be'
-            xml_data = str(xml_data[4:], 'utf-32be').encode('utf-8')
+            xml_data = unicode(xml_data[4:], 'utf-32be').encode('utf-8')
         elif xml_data[:4] == '\xff\xfe\x00\x00':
             # UTF-32LE with BOM
             sniffed_xml_encoding = 'utf-32le'
-            xml_data = str(xml_data[4:], 'utf-32le').encode('utf-8')
+            xml_data = unicode(xml_data[4:], 'utf-32le').encode('utf-8')
         elif xml_data[:3] == '\xef\xbb\xbf':
             # UTF-8 with BOM
             sniffed_xml_encoding = 'utf-8'
-            xml_data = str(xml_data[3:], 'utf-8').encode('utf-8')
+            xml_data = unicode(xml_data[3:], 'utf-8').encode('utf-8')
         else:
             # ASCII-compatible
             pass
@@ -652,7 +652,7 @@ def _getCharacterEncoding(http_headers, xml_data):
         true_encoding = http_encoding or 'us-ascii'
     elif http_content_type.startswith('text/'):
         true_encoding = http_encoding or 'us-ascii'
-    elif http_headers and ('content-type' not in http_headers):
+    elif http_headers and (not http_headers.has_key('content-type')):
         true_encoding = xml_encoding or 'iso-8859-1'
     else:
         true_encoding = xml_encoding or 'utf-8'

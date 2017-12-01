@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -
 #
-# Copyright (c) 2008, 2009 Benoit Chesneau <benoitc@e-engura.com> 
+# Copyright (c) 2008, 2009 Benoit Chesneau <benoitc@e-engura.com>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -23,13 +23,13 @@ try:
     import httplib2
 except ImportError:
     httplib2 = None
-    
+
 class HTTPLib2Transport(HTTPTransportBase):
     """An http client that uses httplib2 for performing HTTP
     requests. This implementation supports HTTP caching.
 
     .. seealso::
-        
+
         `Httplib2 <http://code.google.com/p/httplib2/>`_
     """
 
@@ -38,7 +38,7 @@ class HTTPLib2Transport(HTTPTransportBase):
         :param proxy_infos: dict, infos to connect via proxy:
 
         .. code-block:: python
-    
+
             {
                 'proxy_user': 'XXXXXXX',
                 'proxy_password': 'XXXXXXX',
@@ -55,16 +55,16 @@ class HTTPLib2Transport(HTTPTransportBase):
                                'See http://bitworking.org/projects/httplib2/')
 
         super(HTTPLib2Transport, self).__init__(proxy_infos=proxy_infos)
-        
+
         # set debug level
         httplib2.debuglevel = restclient.debuglevel
-        
+
         _proxy_infos = None
         if proxy_infos and proxy_infos is not None:
             try:
                 import socks
             except:
-                print("socks module isn't installed, you can't use proxy", file=sys.stderr)
+                print >>sys.stderr, "socks module isn't installed, you can't use proxy"
                 socks = None
 
             if socks is not None:
@@ -77,20 +77,20 @@ class HTTPLib2Transport(HTTPTransportBase):
                 )
 
         if http is None:
-            http = httplib2.Http(proxy_info=_proxy_infos)
+            http = httplib2.Http(proxy_info=_proxy_infos, disable_ssl_certificate_validation=True)
         else:
             if _proxy_infos is not None and \
                     not http.proxy_info and \
                     http.proxy_info is None:
                 proxy_info = _proxy_infos
         self.http = http
-        
+
         self.http.force_exception_to_status_code = False
 
     def request(self, url, method='GET', body=None, headers=None):
         headers = headers or {}
         body = body or ''
-        
+
         content = ''
         if method in ('POST','PUT'):
             if hasattr(body, 'read'):
@@ -108,11 +108,11 @@ class HTTPLib2Transport(HTTPTransportBase):
         if not (url.startswith('http://') or url.startswith('https://')):
             error = 'URL is not a HTTP URL: %r' % (url,)
             if restclient.debuglevel > 0:
-                print(str(error), file=sys.stderr)
+                print >>sys.stderr, str(error)
             raise InvalidUrl(error)
 
         headers.setdefault('User-Agent', USER_AGENT)
-        
+
         httplib2_response, content = self.http.request(url,
                 method=method, body=content, headers=headers)
 
@@ -120,7 +120,7 @@ class HTTPLib2Transport(HTTPTransportBase):
             final_url = httplib2_response['content-location']
         except KeyError:
             final_url = url
-            
+
         httplib2_response['final_url'] = final_url
         httplib2_response['origin_url'] = url
         resp = HTTPResponse(httplib2_response)
